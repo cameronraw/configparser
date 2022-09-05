@@ -24,4 +24,15 @@
       <ProjectReference Include="..\ConfigParser\ConfigParser.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="TestTextFiles\ShouldNotBeDetected.txt" />
+      <EmbeddedResource Include="TestTextFiles\ShouldNotBeDetected.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="TestTextFiles\TestConfig.txt" />
+      <EmbeddedResource Include="TestTextFiles\TestConfig.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
 </Project>
