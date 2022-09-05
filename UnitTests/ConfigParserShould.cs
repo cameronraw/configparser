@@ -6,49 +6,95 @@ namespace ConfigParser;
 
 public class Tests
 {
+    private const string MockedValidConfigContents = "- Order Profile:\nordersPerHour:\t5000\norderLinesPerOrder:\t10";
+
+    private const string MockedInvalidConfigContents =
+        "- Order Profile:\nordersPerHour:\tnotanint\norderLinesPerOrder:\t10";
+
+    private Mock<FileController.IFileController> _fileController = null!;
+
     [SetUp]
     public void Setup()
     {
+        _fileController = new Mock<FileController.IFileController>();
     }
 
     [Test]
     public void ReturnASpecifiedLoadedConfigValue()
     {
-        var mockedConfigContents = "- Order Profile:\nordersPerHour:\t5000\norderLinesPerOrder:\t10";
-        
-        var fileController = new Mock<FileController.IFileController>();
         var mockedConfigFiles = new Dictionary<ConfigFilePath, ConfigFileContents>
         {
-            {new ConfigFilePath("MockedConfigContents"), new ConfigFileContents(mockedConfigContents)}
+            { new ConfigFilePath("MockedConfigContents"), new ConfigFileContents(MockedValidConfigContents) }
         };
-        fileController.Setup(mock => mock.GetConfigFiles())
-            .Returns(mockedConfigFiles);
-        
-        var configParser = new ConfigParser(fileController.Object);
 
-        var ordersPerHour = configParser.GetConfig<int>(mockedConfigFiles.First().Value, 
-            "ordersPerHour");
+        _fileController.Setup(mock => mock.GetConfigFiles())
+            .Returns(mockedConfigFiles);
+
+        var configParser = new ConfigParser(_fileController.Object);
+
+        var ordersPerHour = configParser.GetConfig<int>("ordersPerHour");
 
         ordersPerHour.Should().Be(5000);
     }
 
     [Test]
-    public void ThrowAnException_IfTypeIsNotValid()
+    public void PrioritizeConfigsByFileName()
     {
-        var mockedConfigContents = "- Order Profile:\nordersPerHour:\tnotanint\norderLinesPerOrder:\t10";
+        var baseConfigString = "- Order Profile:\nordersPerHour:\t5000\norderLinesPerOrder:\t10";
+        var projectConfigString = "- Order Profile:\nordersPerHour:\t6000\norderLinesPerOrder:\t10";
+        var experimentalConfigString = "- Order Profile:\nordersPerHour:\t7000\norderLinesPerOrder:\t10";
         
-        var fileController = new Mock<FileController.IFileController>();
         var mockedConfigFiles = new Dictionary<ConfigFilePath, ConfigFileContents>
         {
-            {new ConfigFilePath("MockedConfigContents"), new ConfigFileContents(mockedConfigContents)}
+            { new ConfigFilePath("ProjectConfig"), new ConfigFileContents(projectConfigString) },
+            { new ConfigFilePath("ExperimentalConfig"), new ConfigFileContents(experimentalConfigString) },
+            { new ConfigFilePath("BaseConfig"), new ConfigFileContents(baseConfigString) }
         };
-        fileController.Setup(mock => mock.GetConfigFiles())
-            .Returns(mockedConfigFiles);
         
-        var configParser = new ConfigParser(fileController.Object);
+        _fileController.Setup(mock => mock.GetConfigFiles())
+            .Returns(mockedConfigFiles);
 
-        Action attemptToGetConfig = () => configParser.GetConfig<int>(mockedConfigFiles.First().Value,
-            "ordersPerHour");
+        var configParser = new ConfigParser(_fileController.Object);
+
+        var ordersPerHour = configParser.GetConfig<int>("ordersPerHour");
+
+        ordersPerHour.Should().Be(7000);
+    }
+
+    [Test]
+    public void ThrowAnException_IfTypeIsNotValid()
+    {
+        var mockedConfigFiles = new Dictionary<ConfigFilePath, ConfigFileContents>
+        {
+            { new ConfigFilePath("MockedConfigContents"), new ConfigFileContents(MockedInvalidConfigContents) }
+        };
+
+        _fileController.Setup(mock => mock.GetConfigFiles())
+            .Returns(mockedConfigFiles);
+
+        var configParser = new ConfigParser(_fileController.Object);
+
+        Action attemptToGetConfig = () => configParser.GetConfig<int>("ordersPerHour");
+
+        attemptToGetConfig.Should().Throw<Exception>();
+    }
+
+    [Test]
+    public void ThrowAnException_IfConfigNotFound()
+    {
+        var mockedConfigFiles = new Dictionary<ConfigFilePath, ConfigFileContents>
+        {
+            { new ConfigFilePath("MockedConfig1"), new ConfigFileContents(MockedValidConfigContents) },
+            { new ConfigFilePath("MockedConfig2"), new ConfigFileContents(MockedValidConfigContents) },
+            { new ConfigFilePath("MockedConfig3"), new ConfigFileContents(MockedValidConfigContents) }
+        };
+
+        _fileController.Setup(mock => mock.GetConfigFiles())
+            .Returns(mockedConfigFiles);
+
+        var configParser = new ConfigParser(_fileController.Object);
+
+        Action attemptToGetConfig = () => configParser.GetConfig<int>("nonExistentConfigId");
 
         attemptToGetConfig.Should().Throw<Exception>();
     }
