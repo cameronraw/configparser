@@ -2,7 +2,7 @@
 
 namespace ConfigParser;
 
-public class FileController
+public class FileController : FileController.IFileController
 {
     private readonly string _filePath;
 
@@ -41,5 +41,11 @@ public class FileController
         using var streamReader = new StreamReader(configFile.PathAsString);
         var contents = streamReader.ReadToEnd();
         return contents;
+    }
+    
+    public interface IFileController
+    {
+        public Dictionary<ConfigFilePath, ConfigFileContents> GetConfigFiles();
+        
     }
 }
