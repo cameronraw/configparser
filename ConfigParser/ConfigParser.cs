@@ -33,7 +33,7 @@ public class ConfigParser
 
         if (string.IsNullOrEmpty(returnedConfigValue))
         {
-            throw new Exception("Config value was not found.");
+            throw new ConfigValueNotFoundException($"Config value {configId} was not found.");
         }
 
         return TryParseTypeFromString<T>(returnedConfigValue);
@@ -45,9 +45,9 @@ public class ConfigParser
     {
         var validConfigFileSuffixes = new List<string>
         {
-            "base",
-            "project",
-            "experiment"
+            ConfigSuffix.Base.ToLowerCaseString(),
+            ConfigSuffix.Project.ToLowerCaseString(),
+            ConfigSuffix.Experiment.ToLowerCaseString()
         };
 
         List<ConfigFileContents> orderedConfigs = validConfigFileSuffixes
@@ -93,13 +93,6 @@ public class ConfigParser
     {
         var converter = TypeDescriptor.GetConverter(typeof(T));
 
-        var convertedValue = (T)converter.ConvertFromString(rawStringFromConfig)!;
-
-        if (convertedValue == null)
-        {
-            throw new Exception($"Value could not be converted to {typeof(T)}");
-        }
-
-        return convertedValue;
+        return (T)converter.ConvertFromString(rawStringFromConfig)!;
     }
 }

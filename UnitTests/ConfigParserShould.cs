@@ -69,17 +69,18 @@ public class Tests
     {
         var mockedConfigFiles = new Dictionary<ConfigFilePath, ConfigFileContents>
         {
-            { new ConfigFilePath("MockedConfigContents"), new ConfigFileContents(MockedInvalidConfigContents) }
+            { new ConfigFilePath("Base"), new ConfigFileContents(MockedInvalidConfigContents) }
         };
 
         _fileController.Setup(mock => mock.GetConfigFiles())
             .Returns(mockedConfigFiles);
 
         var configParser = new ConfigParser(_fileController.Object);
+        configParser.LoadConfigs();
 
         Action attemptToGetConfig = () => configParser.GetConfig<int>("ordersPerHour");
 
-        attemptToGetConfig.Should().Throw<Exception>();
+        attemptToGetConfig.Should().Throw<ArgumentException>();
     }
 
     [Test]
@@ -96,9 +97,10 @@ public class Tests
             .Returns(mockedConfigFiles);
 
         var configParser = new ConfigParser(_fileController.Object);
+        configParser.LoadConfigs();
 
         Action attemptToGetConfig = () => configParser.GetConfig<int>("nonExistentConfigId");
 
-        attemptToGetConfig.Should().Throw<Exception>();
+        attemptToGetConfig.Should().Throw<ConfigValueNotFoundException>();
     }
 }
