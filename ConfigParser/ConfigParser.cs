@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.RegularExpressions;
 using ConfigParser.Entities;
 using ConfigParser.Interfaces;
 
@@ -28,7 +29,9 @@ public class ConfigParser
 
         foreach (var config in orderedConfigOptions)
         {
-            returnedConfigValue = GetConfigValueFromFileContents(config, configId);
+            var configValueFromFileContents = GetConfigValueFromFileContents(config, configId);
+            if (configValueFromFileContents == string.Empty) continue;
+            returnedConfigValue = configValueFromFileContents;
         }
 
         if (string.IsNullOrEmpty(returnedConfigValue))
@@ -82,11 +85,24 @@ public class ConfigParser
 
         foreach (var line in lines)
         {
-            if (!line.Contains(configId)) continue;
-            return line.Split("\t").Last();
+            var cleanedLine = RemoveComments(line);
+            
+            if (!cleanedLine.Contains(configId)) continue;
+            return cleanedLine.Split('\u0009'.ToString(), StringSplitOptions.RemoveEmptyEntries)[1];
         }
 
         return string.Empty;
+    }
+
+    private static string RemoveComments(string commentedString)
+    {
+        var commentPosition = commentedString.IndexOf("//", StringComparison.Ordinal);
+        if(commentPosition == -1)
+        {
+            return commentedString;
+        }
+
+        return commentedString.Remove(commentPosition);
     }
 
     private static T TryParseTypeFromString<T>(string rawStringFromConfig)
