@@ -1,8 +1,9 @@
 ﻿using ConfigParser.Entities;
+using ConfigParser.Interfaces;
 
 namespace ConfigParser;
 
-public class FileController : FileController.IFileController
+public class FileController : IFileController
 {
     private readonly string _filePath;
 
@@ -43,9 +44,4 @@ public class FileController : FileController.IFileController
         return contents;
     }
     
-    public interface IFileController
-    {
-        public Dictionary<ConfigFilePath, ConfigFileContents> GetConfigFiles();
-        
-    }
 }

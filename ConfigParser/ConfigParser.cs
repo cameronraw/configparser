@@ -1,25 +1,32 @@
 ﻿using System.ComponentModel;
 using ConfigParser.Entities;
+using ConfigParser.Interfaces;
 
 namespace ConfigParser;
 
 public class ConfigParser
 {
-    private FileController.IFileController _fileController;
-    private List<ConfigFileContents> _orderedConfigOptions;
+    private readonly IFileController _fileController;
+    private Dictionary<ConfigFilePath, ConfigFileContents> _loadedConfigFiles;
 
-    public ConfigParser(FileController.IFileController fileController)
+    public ConfigParser(IFileController fileController)
     {
         _fileController = fileController;
-        var rawConfigFiles = _fileController.GetConfigFiles();
-        _orderedConfigOptions = PrioritizeConfigFileContents(rawConfigFiles);
+        _loadedConfigFiles = new Dictionary<ConfigFilePath, ConfigFileContents>();
+    }
+
+    public void LoadConfigs()
+    {
+        _loadedConfigFiles = _fileController.GetConfigFiles();
     }
 
     public T GetConfig<T>(string configId)
     {
         var returnedConfigValue = string.Empty;
 
-        foreach (var config in _orderedConfigOptions)
+        var orderedConfigOptions = PrioritizeConfigFileContents(_loadedConfigFiles);
+
+        foreach (var config in orderedConfigOptions)
         {
             returnedConfigValue = GetConfigValueFromFileContents(config, configId);
         }
@@ -36,8 +43,6 @@ public class ConfigParser
     private List<ConfigFileContents> PrioritizeConfigFileContents
         (Dictionary<ConfigFilePath, ConfigFileContents> configFiles)
     {
-        var orderedConfigs = new List<ConfigFileContents>();
-
         var validConfigFileSuffixes = new List<string>
         {
             "base",
@@ -45,24 +50,30 @@ public class ConfigParser
             "experiment"
         };
 
-        foreach (var suffix in validConfigFileSuffixes)
-        {
-            foreach (var configFile in configFiles)
-            {
-                var configFilePath = configFile.Key.PathAsString.ToLower();
-
-                if (configFilePath.Contains(suffix))
-                {
-                    orderedConfigs.Add(configFile.Value);
-                }
-            }
-        }
+        List<ConfigFileContents> orderedConfigs = validConfigFileSuffixes
+            .Select(CheckForSuffixInFileNames)
+            .Where(config => config != null).ToList()!;
 
         if (orderedConfigs.Count != 0) return orderedConfigs;
 
         Console.WriteLine("Config file naming convention not followed, be aware of unexpected behaviour.");
         return configFiles.Select(c => c.Value).ToList();
     }
+
+    private ConfigFileContents? CheckForSuffixInFileNames(string suffix)
+    {
+        foreach (var configFile in _loadedConfigFiles)
+        {
+            var configFilePath = configFile.Key.PathAsString.ToLower();
+
+            if (configFilePath.Contains(suffix))
+            {
+                return configFile.Value;
+            }
+        }
+        return null;
+    }
+
 
     private static string GetConfigValueFromFileContents(ConfigFileContents configFileContents, string configId)
     {

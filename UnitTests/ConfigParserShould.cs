@@ -1,4 +1,5 @@
 using ConfigParser.Entities;
+using ConfigParser.Interfaces;
 using FluentAssertions;
 using Moq;
 
@@ -11,12 +12,12 @@ public class Tests
     private const string MockedInvalidConfigContents =
         "- Order Profile:\nordersPerHour:\tnotanint\norderLinesPerOrder:\t10";
 
-    private Mock<FileController.IFileController> _fileController = null!;
+    private Mock<IFileController> _fileController = null!;
 
     [SetUp]
     public void Setup()
     {
-        _fileController = new Mock<FileController.IFileController>();
+        _fileController = new Mock<IFileController>();
     }
 
     [Test]
@@ -31,6 +32,7 @@ public class Tests
             .Returns(mockedConfigFiles);
 
         var configParser = new ConfigParser(_fileController.Object);
+        configParser.LoadConfigs();
 
         var ordersPerHour = configParser.GetConfig<int>("ordersPerHour");
 
@@ -55,6 +57,7 @@ public class Tests
             .Returns(mockedConfigFiles);
 
         var configParser = new ConfigParser(_fileController.Object);
+        configParser.LoadConfigs();
 
         var ordersPerHour = configParser.GetConfig<int>("ordersPerHour");
 
