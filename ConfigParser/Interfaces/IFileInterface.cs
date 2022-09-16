@@ -1,4 +1,5 @@
-﻿using ConfigParser.Entities;
+﻿using System.Collections.Generic;
+using ConfigParser.Entities;
 
 namespace ConfigParser.Interfaces;
 

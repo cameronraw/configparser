@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
-using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using ConfigParser.Entities;
 using ConfigParser.Interfaces;
 
@@ -9,7 +11,6 @@ public class ConfigParser
 {
     private readonly IFileController _fileController;
     private Dictionary<ConfigFilePath, ConfigFileContents> _loadedConfigFiles;
-
     public ConfigParser(IFileController fileController)
     {
         _fileController = fileController;
